@@ -32,7 +32,7 @@ public class Question {
 
     private int viewCount; // 조회수 필드 추가
     private int voteCount;
-    viewCount +1 ;
+
 
     @ManyToOne
     private SiteUser author;

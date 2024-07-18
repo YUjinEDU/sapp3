@@ -1,5 +1,7 @@
 package com.ll.sapp.question;
 
+import com.ll.sapp.answer.Answer;
+import com.ll.sapp.answer.AnswerService;
 import com.ll.sapp.answer.AnswerForm;
 import com.ll.sapp.user.SiteUser;
 import com.ll.sapp.user.UserService;
@@ -26,17 +28,22 @@ public class QuestionController {
 
 
     @GetMapping("/list")
-    public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page) {
-        Page<Question> paging = this.questionService.getList(page);
+    public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
+                       @RequestParam(value = "kw", defaultValue = "") String kw) {
+        Page<Question> paging = this.questionService.getList(page, kw);
         model.addAttribute("paging", paging);
+        model.addAttribute("kw", kw);
         return "question_list";
     }
 
     @GetMapping(value = "/detail/{id}")
-    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+    public String detail(Model model, @PathVariable Integer id, AnswerForm answerForm,
+                         @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "") String sort)  {
         this.questionService.increaseViewCount(id);  // 조회수 증가
         Question question = this.questionService.getQuestion(id);
         model.addAttribute("question", question);
+        Page<Answer> paging = AnswerService.getAnswerPage(question, page, sort);
+
         return "question_detail";
     }
     @PreAuthorize("isAuthenticated()")

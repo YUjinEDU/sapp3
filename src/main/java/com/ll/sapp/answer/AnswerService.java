@@ -4,11 +4,16 @@ import com.ll.sapp.DataNotFoundException;
 import com.ll.sapp.question.Question;
 import com.ll.sapp.user.SiteUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-
 @RequiredArgsConstructor
 @Service
 public class AnswerService {
@@ -16,13 +21,14 @@ public class AnswerService {
     private final AnswerRepository answerRepository;
 
 
-    public void create(Question question, String content, SiteUser author) {
+    public Answer create(Question question, String content, SiteUser author) {
         Answer answer = new Answer();
         answer.setContent(content);
         answer.setCreateDate(LocalDateTime.now());
         answer.setQuestion(question);
         answer.setAuthor(author);
         this.answerRepository.save(answer);
+        return answer;
     }
 
     public Answer getAnswer(Integer id) {
@@ -42,5 +48,32 @@ public class AnswerService {
 
     public void delete(Answer answer) {
         this.answerRepository.delete(answer);
+    }
+
+    public void vote(Answer answer, SiteUser siteUser) {
+        answer.getVoter().add(siteUser);
+        this.answerRepository.save(answer);
+    }
+
+    public Page<Answer> getAnswerPage(Question question, int page, String sort) {
+        Pageable pageable;
+
+        // 최신순
+        if (sort.equals("createDate")) {
+            List<Sort.Order> sorts = new ArrayList<>();
+            sorts.add(Sort.Order.desc("createDate"));
+            pageable = PageRequest.of(page, 10, Sort.by(sorts)); //페이지 번호, 개수
+            return answerRepository.findAllByQuestion(question, pageable);
+        }
+
+        // 추천순, 기본
+        else {
+            pageable = PageRequest.of(page, 10); // 페이지네이션 정보
+            // 추천순 : 10개에 페이지정보만 주면 알아서
+            if (sort.equals("voter"))
+                return answerRepository.findAllByQuestionOrderByVoter(question, pageable);
+            // 기본
+            return answerRepository.findAllByQuestion(question, pageable);
+        }
     }
 }
